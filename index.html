@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>词汇闯关 - 自定义分组词库完整版</title>
+<style>
+:root {
+    --bg-page: #0b0d1a;
+    --bg-card: #22243b;
+    --bg-btn-normal: #2c2e48;
+    --bg-btn-active: #41a6ff;
+    --text-main: #e8edff;
+    --text-sub: #a0a8c7;
+    --text-highlight: #63ccff;
+    --border-normal: #383b5c;
+    --border-active: #63ccff;
+    --success-green: #66e088;
+    --error-red: #ff6b6b;
+    --warn-yellow: #ffc857;
+    --shadow-card: 0 8px 30px rgba(0,0,0,0.35);
+    --transition-fast: 0.2s ease;
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, "Microsoft Yahei", sans-serif;
+}
+body {
+    background: var(--bg-page);
+    color: var(--text-main);
+    min-height: 100vh;
+    padding: 30px 16px;
+    background-image: 
+        radial-gradient(#232644 1px, transparent 1px),
+        radial-gradient(#1c1f38 0.5px, transparent 0.5px),
+        linear-gradient(160deg, #0b0d1a 0%, #141730 100%);
+    background-size: 40px 40px, 15px 15px, 100% 100%;
+    background-position: 0 0, 10px 10px, 0 0;
+    transition: all var(--transition-fast);
+}
+.page-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+.page-title {
+    font-size: 48px;
+    background: linear-gradient(90deg, #70d0ff, #41a6ff);
+    -webkit-background-clip: text;
+    color: transparent;
+    font-weight: 700;
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 20px rgba(99, 204, 255, 0.4);
+}
+.page-subtitle {
+    font-size: 16px;
+    color: var(--text-sub);
+}
+.header-group-select {
+    margin:12px 0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+.header-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top:16px;
+    flex-wrap: wrap;
+}
+.header-btn {
+    padding:8px 16px;
+    border-radius:8px;
+    border:1px solid var(--border-normal);
+    background:var(--bg-btn-normal);
+    color:var(--text-main);
+    cursor:pointer;
+    transition:var(--transition-fast);
+}
+.header-btn:hover {
+    border-color:var(--text-highlight);
+}
+.listen-speaker-btn {
+    display: none;
+    margin: 0 auto 16px;
+    padding: 12px 30px;
+    font-size: 22px;
+    gap:10px;
+}
+.listen-speaker-btn.show {
+    display: flex;
+}
+.main-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: var(--shadow-card);
+}
+.mode-tab-group {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+.mode-tab {
+    padding: 16px 10px;
+    background: var(--bg-btn-normal);
+    border: 1px solid var(--border-normal);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 17px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+.mode-tab.active {
+    background: linear-gradient(90deg, rgba(65, 166, 255, 0.15), rgba(99, 204, 255, 0.05));
+    border-color: var(--border-active);
+    box-shadow: 0 0 16px rgba(99, 204, 255, 0.3), inset 0 0 10px rgba(99, 204, 255, 0.08);
+}
+.mode-tab:hover {
+    border-color: var(--text-highlight);
+}
+.star-tab-group {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 28px;
+}
+.star-tab {
+    padding: 12px 32px;
+    background: var(--bg-btn-normal);
+    border: 1px solid var(--border-normal);
+    border-radius: 9px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+.star-tab.active {
+    border-color: var(--border-active);
+    background: rgba(65, 166, 255, 0.12);
+}
+.level-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 12px;
+}
+.level-item {
+    background: var(--bg-btn-normal);
+    border: 1px solid var(--border-normal);
+    border-radius: 9px;
+    padding: 14px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+.level-item:hover:not(.lock) {
+    border-color: var(--text-highlight);
+    box-shadow: 0 0 12px rgba(99, 204, 255, 0.18);
+    transform: translateY(-3px);
+}
+.level-item.lock {
+    opacity:0.4;
+    cursor:not-allowed;
+}
+.level-num {
+    font-size: 22px;
+    margin-bottom: 4px;
+}
+.level-count {
+    font-size: 13px;
+    color: var(--success-green);
+}
+.level-star {
+    color: #ffd700;
+    font-size:16px;
+    margin-top:4px;
+}
+.level-star.empty {
+    color:#444868;
+}
+.back-btn {
+    padding: 10px 18px;
+    background: var(--bg-btn-normal);
+    border: 1px solid var(--border-normal);
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 24px;
+}
+.answer-top-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 30px;
+    font-size: 16px;
+    color: var(--text-sub);
+}
+.question-text {
+    font-size: 42px;
+    text-align: center;
+    background: linear-gradient(90deg, #94d8ff, #63ccff);
+    -webkit-background-clip: text;
+    color: transparent;
+    margin-bottom: 12px;
+    min-height: 52px;
+}
+.question-tip {
+    text-align: center;
+    color: var(--text-sub);
+    font-size: 16px;
+    margin-bottom: 36px;
+}
+.answer-option-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 36px;
+}
+.answer-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px 10px;
+    background: var(--bg-btn-normal);
+    border: 1px solid var(--border-normal);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    animation: optionPop 0.3s ease forwards;
+}
+@keyframes optionPop {
+    from { opacity:0; transform: scale(0.92); }
+    to { opacity:1; transform: scale(1); }
+}
+.answer-option:hover {
+    border-color: var(--text-highlight);
+}
+.answer-option.right {
+    border-color: var(--success-green);
+    background: linear-gradient(135deg, rgba(102, 224, 136, 0.15), rgba(102, 224, 136, 0.03));
+}
+.answer-option.wrong {
+    border-color: var(--error-red);
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(255, 224, 136, 0.03));
+}
+.voice-icon {
+    font-size: 18px;
+    opacity: 0.7;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.1);
+    user-select: none;
+}
+.voice-icon:hover {
+    opacity: 1;
+    background: rgba(99, 204, 255, 0.2);
+}
+.bottom-status {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    font-size: 18px;
+    flex-wrap: wrap;
+}
+.panel {
+    display: none;
+    opacity:0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.panel.show {
+    display: block;
+    opacity:1;
+    transform: translateY(0);
+}
+.mask {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    z-index:999;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+}
+.mask.show {
+    display:flex;
+}
+.modal-box {
+    width:100%;
+    max-width:500px;
+    max-height:85vh;
+    overflow-y:auto;
+    background:var(--bg-card);
+    border-radius:12px;
+    padding:24px;
+}
+.modal-title {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:20px;
+    margin-bottom:20px;
+}
+.modal-close {
+    font-size:24px;
+    cursor:pointer;
+    color:var(--text-sub);
+}
+.setting-row {
+    margin:16px 0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    flex-wrap: wrap;
+}
+.setting-row input, .setting-row select, #groupSelect {
+    padding:6px 10px;
+    background:var(--bg-btn-normal);
+    border:1px solid var(--border-normal);
+    color:var(--text-main);
+    border-radius:6px;
+}
+hr {
+    border:none;
+    border-top:1px solid var(--border-normal);
+}
+textarea {
+    resize: vertical;
+}
+.match-mask {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    z-index:1000;
+    display:none;
+    padding:20px;
+    overflow-y:auto;
+}
+.match-mask.show {
+    display:block;
+}
+.match-wrap {
+    max-width:1100px;
+    margin:0 auto;
+    background:var(--bg-card);
+    border-radius:16px;
+    padding:28px;
+}
+.match-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:24px;
+}
+.match-card-grid {
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px,1fr));
+    gap:12px;
+    margin-bottom:24px;
+}
+.match-card {
+    padding:20px 8px;
+    text-align:center;
+    background:var(--bg-btn-normal);
+    border:1px solid var(--border-normal);
+    border-radius:10px;
+    cursor:pointer;
+    transition:0.3s ease;
+}
+.match-card:hover {
+    border-color:var(--text-highlight);
+}
+.match-card.select {
+    border-color:var(--border-active);
+    box-shadow:0 0 10px rgba(99,204,255,0.3);
+}
+.match-card.match {
+    animation: cardDisappear 0.4s ease forwards;
+    pointer-events:none;
+}
+@keyframes cardDisappear {
+    0% { opacity:1; transform: scale(1); }
+    50% { opacity:0.6; transform: scale(1.1); background:rgba(102, 224, 136, 0.3); border-color:var(--success-green);}
+    100% { opacity:0; transform: scale(0); height:0; margin:0; padding:0; border:none;}
+}
+.match-bottom-info {
+    text-align:center;
+    margin-top:20px;
+    font-size:18px;
+}
+@media (hover: none) {
+    .mode-tab:active, .level-item:active:not(.lock), .answer-option:active {
+        transform: scale(0.96);
+        opacity:0.85;
+    }
+}
+@media (max-width: 900px) {
+    .mode-tab-group {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .level-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+@media (max-width: 550px) {
+    .page-title {
+        font-size: 32px;
+    }
+    .answer-option-grid {
+        grid-template-columns: 1fr;
+    }
+    .level-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+</style>
+</head>
+<body>
+<div class="page-header">
+    <h1 class="page-title">词汇闯关</h1>
+    <p class="page-subtitle">自定义分组词库·四题型单词训练</p>
+    <div class="header-group-select">
+        <span>当前词库分组：</span>
+        <select id="groupSelect"></select>
+        <button class="header-btn" id="openGroupManageBtn">词库管理</button>
+    </div>
+    <div class="header-buttons">
+        <button class="header-btn" id="wrongReviewBtn">错题复习</button>
+        <button class="header-btn" id="openSettingBtn">全局设置</button>
+    </div>
+</div>
+
+<div class="main-wrap">
+    <div id="homePanel" class="panel show">
+        <div class="mode-tab-group">
+            <div class="mode-tab active" data-mode="cnToEn">看中文选英文</div>
+            <div class="mode-tab" data-mode="enToCn">看英文选中文</div>
+            <div class="mode-tab" data-mode="listenToCn">听音选中文</div>
+            <div class="mode-tab" data-mode="matchLink">连线配对</div>
+        </div>
+        <div class="star-tab-group">
+            <div class="star-tab active" data-star="1">一星 21关</div>
+            <div class="star-tab" data-star="2">二星 36关</div>
+        </div>
+        <div class="level-grid" id="levelBox"></div>
+    </div>
+
+    <div id="answerPanel" class="panel">
+        <div class="answer-top-info">
+            <button class="back-btn" id="backHomeBtn">返回关卡</button>
+            <span id="levelTag">一星 第1关</span>
+        </div>
+        <button class="header-btn listen-speaker-btn" id="listenSpeakerBtn">🔊 点击重复播放单词读音</button>
+        <div class="question-text" id="qText">加法;增加;附加</div>
+        <p class="question-tip" id="questionTip">请选择对应的英文单词</p>
+        <div class="answer-option-grid" id="optionBox"></div>
+        <div class="bottom-status">
+            <span>进度 <b id="progressNum">1/30</b></span>
+            <span>正确 <b id="rightNum">0</b></span>
+            <span>错误 <b id="wrongNum">0</b></span>
+            <span>连击 <b id="comboNum">0</b></span>
+        </div>
+    </div>
+</div>
+
+<div class="mask" id="settingMask">
+    <div class="modal-box">
+        <div class="modal-title">
+            <span>全局配置设置</span>
+            <span class="modal-close" id="closeSetting">×</span>
+        </div>
+        <div class="setting-row">
+            <label>单词发音口音</label>
+            <select id="voiceSet">
+                <option value="us">美式发音</option>
+                <option value="gb">英式发音</option>
+            </select>
+        </div>
+        <div class="setting-row">
+            <label>单关单词数量</label>
+            <input type="number" min="5" max="50" id="perLevelSet" value="30">
+        </div>
+        <div class="setting-row">
+            <label>答题音效开关</label>
+            <input type="checkbox" id="soundSwitch" checked>
+        </div>
+        <div class="setting-row">
+            <label>一键重置闯关进度</label>
+            <button class="header-btn" id="resetProgressBtn">重置</button>
+        </div>
+        <div class="setting-row">
+            <label>清空全部本地数据</label>
+            <button class="header-btn" id="clearAllDataBtn">清空数据</button>
+        </div>
+        <div style="text-align:center;margin-top:24px;">
+            <button class="header-btn" id="saveSettingBtn">保存设置</button>
+        </div>
+    </div>
+</div>
+
+<div class="mask" id="groupMask">
+    <div class="modal-box">
+        <div class="modal-title">
+            <span>词库分组管理</span>
+            <span class="modal-close" id="closeGroupMask">×</span>
+        </div>
+        <div class="setting-row">
+            <label>新建分组名称</label>
+            <input type="text" id="newGroupName" placeholder="七年级上册">
+            <button class="header-btn" id="createGroupBtn">创建</button>
+        </div>
+        <div class="setting-row">
+            <label>重命名当前分组</label>
+            <input type="text" id="renameGroupInput" placeholder="输入新名称">
+            <button class="header-btn" id="renameGroupBtn">重命名</button>
+        </div>
+        <div class="setting-row">
+            <label>删除当前分组（课标基础组不可删）</label>
+            <button class="header-btn" id="delGroupBtn">删除分组</button>
+        </div>
+        <hr>
+        <div class="setting-row" style="flex-direction:column;align-items:flex-start;">
+            <label>导入自定义词库（每行 英文|中文）</label>
+            <textarea id="importTextarea" rows="6" placeholder="apple|苹果"></textarea>
+            <div style="display:flex;gap:10px;margin-top:8px;">
+                <button class="header-btn" id="importWordBtn">追加导入</button>
+                <button class="header-btn" id="replaceImportBtn">覆盖导入</button>
+            </div>
+        </div>
+        <div class="setting-row">
+            <label>导出当前分组词库（复制文本）</label>
+            <button class="header-btn" id="exportWordBtn">导出复制</button>
+        </div>
+    </div>
+</div>
+
+<div class="match-mask" id="matchMask">
+    <div class="match-wrap">
+        <div class="match-header">
+            <h2>连线配对模式</h2>
+            <button class="header-btn" id="closeMatchBtn">关闭返回</button>
+        </div>
+        <div class="match-card-grid" id="matchCardBox"></div>
+        <div class="match-bottom-info">
+            <span>配对成功：<b id="matchRight">0</b> / 总单词：<b id="matchTotal">0</b></span>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== 音频朗读、音效底层工具 ====================
+const AUDIO_CFG = {
+    rightTone: { freq: 880, duration: 0.15, type: "sine" },
+    wrongTone: { freq: 220, duration: 0.2, type: "triangle" },
+    voiceAccent: "us",
+    soundEnable: true
+};
+let audioCtx = null;
+let answeringLock = false;
+let globalTimer = null;
+
+function playTone(type) {
+    if(!AUDIO_CFG.soundEnable) return;
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const tone = type === "right" ? AUDIO_CFG.rightTone : AUDIO_CFG.wrongTone;
+    osc.type = tone.type;
+    osc.frequency.value = tone.freq;
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    osc.start();
+    osc.stop(audioCtx.currentTime + tone.duration);
+}
+function speakWord(word) {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(word);
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length) {
+        let targetVoice = voices.find(v => v.lang === (AUDIO_CFG.voiceAccent === "us" ? "en-US" : "en-GB"));
+        if (targetVoice) utter.voice = targetVoice;
+    }
+    utter.rate = 0.96;
+    window.speechSynthesis.speak(utter);
+}
+
+// ==================== 全局配置、存储键、词库 ====================
+const CONFIG = {
+    star1TotalLevel: 21,
+    star2TotalLevel: 36,
+    perLevelWordCount: 30,
+    storageKeyProgress: "vocab_star_progress",
+    storageKeyWrong: "vocab_wrong_words",
+    storageKeySetting: "vocab_global_setting",
+    storageKeyGroupList: "vocab_group_list",
+    storageKeyGroupData: "vocab_group_data",
+    storageKeyActiveGroup: "vocab_active_group",
+    modeList: [
+        {key:"cnToEn", name:"看中文选英文", tip:"请选择对应的英文单词", targetIsEn:true},
+        {key:"enToCn", name:"看英文选中文", tip:"请选择对应的中文释义", targetIsEn:false},
+        {key:"listenToCn", name:"听音选中文", tip:"听发音，选择对应中文释义", targetIsEn:false, hideQuesText:true},
+        {key:"matchLink", name:"连线配对", tip:"点击中英卡片进行配对", isMatchMode:true}
+    ]
+};
+// 基础内置词库
+const WORD_LIB = [
+    {en:"addition", cn:"加法;增加;附加"},
+    {en:"attach", cn:"附上；依附"},
+    {en:"anniversary", cn:"周年纪念日"},
+    {en:"assume", cn:"假定；承担"},
+    {en:"ability", cn:"能力；才能"},
+    {en:"abnormal", cn:"反常的；异常的"},
+    {en:"abolish", cn:"废除；废止"},
+    {en:"abundant", cn:"大量的；丰盛的"},
+    {en:"abuse", cn:"滥用；虐待"},
+    {en:"accelerate", cn:"加速；促进"},
+    {en:"access", cn:"通道；使用权"},
+    {en:"accident", cn:"事故；意外"},
+    {en:"accompany", cn:"陪伴；伴随"},
+    {en:"accomplish", cn:"完成；实现"},
+    {en:"account", cn:"账户；解释"}
+];
+// 本地存储容错封装
+const Storage = {
+    get(key){
+        try {
+            const d = localStorage.getItem(key);
+            return d ? JSON.parse(d) : null;
+        } catch(err) {
+            console.error("读取存储失败", err);
+            return null;
+        }
+    },
+    set(key, val){
+        try {
+            localStorage.setItem(key, JSON.stringify(val));
+        } catch(err) {
+            alert("浏览器本地存储已满，请清理缓存后重试");
+        }
+    },
+    clear(key){
+        localStorage.removeItem(key);
+    },
+    clearAll(){
+        localStorage.clear();
+    }
+};
+// 全局运行状态
+let state = {
+    activeMode: "cnToEn",
+    activeStar: 1,
+    currentLevel: 1,
+    progress: {},
+    wrongWords: [],
+    useWrongLib: false,
+    levelWordList: [],
+    currentAudioWord: "",
+    qIndex: 0,
+    rightCount: 0,
+    wrongCount: 0,
+    combo: 0,
+    matchSelectCard: null,
+    matchRightNum: 0,
+    groupList: ["课标基础组"],
+    groupData: {},
+    activeGroup: "课标基础组",
+    tempImportText: ""
+};
+// DOM元素缓存
+const el = {
+    homePanel: document.getElementById("homePanel"),
+    answerPanel: document.getElementById("answerPanel"),
+    levelBox: document.getElementById("levelBox"),
+    backHomeBtn: document.getElementById("backHomeBtn"),
+    levelTag: document.getElementById("levelTag"),
+    qText: document.getElementById("qText"),
+    questionTip: document.getElementById("questionTip"),
+    optionBox: document.getElementById("optionBox"),
+    progressNum: document.getElementById("progressNum"),
+    rightNum: document.getElementById("rightNum"),
+    wrongNum: document.getElementById("wrongNum"),
+    comboNum: document.getElementById("comboNum"),
+    modeTabs: document.querySelectorAll(".mode-tab"),
+    starTabs: document.querySelectorAll(".star-tab"),
+    listenSpeakerBtn: document.getElementById("listenSpeakerBtn"),
+    settingMask: document.getElementById("settingMask"),
+    closeSetting: document.getElementById("closeSetting"),
+    voiceSet: document.getElementById("voiceSet"),
+    perLevelSet: document.getElementById("perLevelSet"),
+    soundSwitch: document.getElementById("soundSwitch"),
+    openSettingBtn: document.getElementById("openSettingBtn"),
+    saveSettingBtn: document.getElementById("saveSettingBtn"),
+    resetProgressBtn: document.getElementById("resetProgressBtn"),
+    clearAllDataBtn: document.getElementById("clearAllDataBtn"),
+    wrongReviewBtn: document.getElementById("wrongReviewBtn"),
+    matchMask: document.getElementById("matchMask"),
+    closeMatchBtn: document.getElementById("closeMatchBtn"),
+    matchCardBox: document.getElementById("matchCardBox"),
+    matchRight: document.getElementById("matchRight"),
+    matchTotal: document.getElementById("matchTotal"),
+    groupSelect: document.getElementById("groupSelect"),
+    openGroupManageBtn: document.getElementById("openGroupManageBtn"),
+    groupMask: document.getElementById("groupMask"),
+    closeGroupMask: document.getElementById("closeGroupMask"),
+    newGroupName: document.getElementById("newGroupName"),
+    createGroupBtn: document.getElementById("createGroupBtn"),
+    renameGroupInput: document.getElementById("renameGroupInput"),
+    renameGroupBtn: document.getElementById("renameGroupBtn"),
+    delGroupBtn: document.getElementById("delGroupBtn"),
+    importTextarea: document.getElementById("importTextarea"),
+    importWordBtn: document.getElementById("importWordBtn"),
+    replaceImportBtn: document.getElementById("replaceImportBtn"),
+    exportWordBtn: document.getElementById("exportWordBtn")
+};
+
+// 保存全部分组本地数据
+function saveAllGroupData(){
+    Storage.set(CONFIG.storageKeyGroupList, state.groupList);
+    Storage.set(CONFIG.storageKeyGroupData, state.groupData);
+    Storage.set(CONFIG.storageKeyActiveGroup, state.activeGroup);
+    const allProgress = Storage.get(CONFIG.storageKeyProgress) || {};
+    allProgress[state.activeGroup] = state.progress;
+    Storage.set(CONFIG.storageKeyProgress, allProgress);
+    const allWrong = Storage.get(CONFIG.storageKeyWrong) || {};
+    allWrong[state.activeGroup] = state.wrongWords;
+    Storage.set(CONFIG.storageKeyWrong, allWrong);
+}
+// 解析导入txt文本 格式 英文|中文
+function parseImportText(text){
+    const lines = text.trim().split("\n");
+    const wordArr = [];
+    for(let line of lines){
+        const lineTrim = line.trim();
+        if(!lineTrim) continue;
+        const splitArr = lineTrim.split("|");
+        if(splitArr.length >=2){
+            const en = splitArr[0].trim();
+            const cn = splitArr.slice(1).join("|").trim();
+            if(en && cn){
+                wordArr.push({en, cn});
+            }
+        }
+    }
+    return wordArr;
+}
+// 渲染分组下拉选择框
+function renderGroupSelect(){
+    el.groupSelect.innerHTML = "";
+    state.groupList.forEach(groupName=>{
+        const opt = document.createElement("option");
+        opt.innerText = groupName;
+        opt.value = groupName;
+        if(groupName === state.activeGroup) opt.selected = true;
+        el.groupSelect.appendChild(opt);
+    })
+}
+// 渲染关卡格子
+function renderLevelGrid(){
+    el.levelBox.innerHTML = "";
+    const totalLv = state.activeStar === 1 ? CONFIG.star1TotalLevel : CONFIG.star2TotalLevel;
+    let lastCompleteLv = 0;
+    for(let i=1; i<=totalLv; i++){
+        const key = `star${state.activeStar}_lv${i}`;
+        if(state.progress[key] >= CONFIG.perLevelWordCount) lastCompleteLv = i;
+    }
+    for(let i=1; i<=totalLv; i++){
+        const item = document.createElement("div");
+        const key = `star${state.activeStar}_lv${i}`;
+        const finishCount = state.progress[key] || 0;
+        const isComplete = finishCount >= CONFIG.perLevelWordCount;
+        const isLock = i > lastCompleteLv + 1;
+        item.className = `level-item ${isLock ? "lock" : ""}`;
+        item.innerHTML = `
+            <div class="level-num">${i} ${isLock ? "🔒" : ""}</div>
+            <div class="level-count">${finishCount}/${CONFIG.perLevelWordCount}</div>
+            <div class="level-star ${isComplete ? "" : "empty"}">★</div>
+        `;
+        if(!isLock){
+            item.onclick = ()=> startLevel(i);
+        }
+        el.levelBox.appendChild(item);
+    }
+}
+// 绑定全部页面点击事件（修复缺失绑定逻辑）
+function bindAllEvent(){
+    // 听音重播按钮
+    el.listenSpeakerBtn.onclick = ()=>{
+        if(state.currentAudioWord) speakWord(state.currentAudioWord);
+    }
+    // 题型切换
+    el.modeTabs.forEach(tab=>{
+        tab.onclick = ()=>{
+            el.modeTabs.forEach(t=>t.classList.remove("active"));
+            tab.classList.add("active");
+            const modeKey = tab.dataset.mode;
+            const modeInfo = CONFIG.modeList.find(m=>m.key === modeKey);
+            if(modeInfo.isMatchMode){
+                openMatchMode();
+                return;
+            }
+            state.activeMode = modeKey;
+            state.useWrongLib = false;
+            renderLevelGrid();
+        }
+    })
+    // 星级切换
+    el.starTabs.forEach(tab=>{
+        tab.onclick = ()=>{
+            el.starTabs.forEach(t=>t.classList.remove("active"));
+            tab.classList.add("active");
+            state.activeStar = Number(tab.dataset.star);
+            state.useWrongLib = false;
+            renderLevelGrid();
+        }
+    })
+    // 返回首页
+    el.backHomeBtn.onclick = ()=>{
+        clearTimeout(globalTimer);
+        answeringLock = false;
+        state.useWrongLib = false;
+        el.listenSpeakerBtn.classList.remove("show");
+        el.homePanel.classList.add("show");
+        el.answerPanel.classList.remove("show");
+        renderLevelGrid();
+    }
+    // 错题复习
+    el.wrongReviewBtn.onclick = ()=>{
+        if(state.wrongWords.length === 0){
+            alert("错题本暂无单词，先闯关积累错题");
+            return;
+        }
+        state.useWrongLib = true;
+        el.homePanel.classList.remove("show");
+        el.answerPanel.classList.add("show");
+        startWrongReview();
+    }
+    // 全局设置弹窗
+    el.openSettingBtn.onclick = ()=> el.settingMask.classList.add("show");
+    el.closeSetting.onclick = ()=> el.settingMask.classList.remove("show");
+    el.settingMask.onclick = e=>{
+        if(e.target === el.settingMask) el.settingMask.classList.remove("show");
+    }
+    el.saveSettingBtn.onclick = ()=>{
+        AUDIO_CFG.voiceAccent = el.voiceSet.value;
+        AUDIO_CFG.soundEnable = el.soundSwitch.checked;
+        CONFIG.perLevelWordCount = Number(el.perLevelSet.value);
+        Storage.set(CONFIG.storageKeySetting, {
+            voice:AUDIO_CFG.voiceAccent,
+            sound:AUDIO_CFG.soundEnable,
+            perLevel:CONFIG.perLevelWordCount
+        });
+        el.settingMask.classList.remove("show");
+        alert("设置保存成功");
+    }
+    el.resetProgressBtn.onclick = ()=>{
+        if(confirm("确认重置所有关卡进度？")){
+            state.progress = {};
+            Storage.set(CONFIG.storageKeyProgress, state.progress);
+            renderLevelGrid();
+            alert("进度已重置");
+        }
+    }
+    el.clearAllDataBtn.onclick = ()=>{
+        if(confirm("清空全部本地数据不可恢复，确认？")){
+            Storage.clearAll();
+            location.reload();
+        }
+    }
+    // 分组下拉切换
+    el.groupSelect.onchange = ()=>{
+        const target = el.groupSelect.value;
+        state.activeGroup = target;
+        const allProg = Storage.get(CONFIG.storageKeyProgress) || {};
+        state.progress = allProg[target] || {};
+        const allWrong = Storage.get(CONFIG.storageKeyWrong) || {};
+        state.wrongWords = allWrong[target] || [];
+        saveAllGroupData();
+        renderLevelGrid();
+    }
+    // 词库管理弹窗
+    el.openGroupManageBtn.onclick = ()=> el.groupMask.classList.add("show");
+    el.closeGroupMask.onclick = ()=> el.groupMask.classList.remove("show");
+    el.groupMask.onclick = e=>{
+        if(e.target === el.groupMask) el.groupMask.classList.remove("show");
+    }
+    // 新建分组
+    el.createGroupBtn.onclick = ()=>{
+        const name = el.newGroupName.value.trim();
+        if(!name) return alert("请输入分组名称");
+        if(state.groupList.includes(name)) return alert("分组已存在");
+        state.groupList.push(name);
+        state.groupData[name] = [];
+        state.activeGroup = name;
+        saveAllGroupData();
+        renderGroupSelect();
+        el.newGroupName.value = "";
+        alert("分组创建成功");
+    }
+    // 重命名分组
+    el.renameGroupBtn.onclick = ()=>{
+        const old = state.activeGroup;
+        const newName = el.renameGroupInput.value.trim();
+        if(!newName) return alert("输入新名称");
+        if(newName === old) return;
+        if(state.groupList.includes(newName)) return alert("名称已存在");
+        const idx = state.groupList.indexOf(old);
+        state.groupList[idx] = newName;
+        state.groupData[newName] = state.groupData[old];
+        delete state.groupData[old];
+        state.activeGroup = newName;
+        el.renameGroupInput.value = "";
+        saveAllGroupData();
+        renderGroupSelect();
+        alert("重命名完成");
+    }
+    // 删除分组
+    el.delGroupBtn.onclick = ()=>{
+        const del = state.activeGroup;
+        if(del === "课标基础组") return alert("内置分组不可删除");
+        if(!confirm(`删除分组【${del}】所有单词？`)) return;
+        state.groupList = state.groupList.filter(g=>g !== del);
+        delete state.groupData[del];
+        state.activeGroup = "课标基础组";
+        state.progress = Storage.get(CONFIG.storageKeyProgress)["课标基础组"] || {};
+        state.wrongWords = Storage.get(CONFIG.storageKeyWrong)["课标基础组"] || [];
+        saveAllGroupData();
+        renderGroupSelect();
+        renderLevelGrid();
+        alert("分组已删除");
+    }
+    // 追加导入单词
+    el.importWordBtn.onclick = ()=>{
+        const text = el.importTextarea.value;
+        const arr = parseImportText(text);
+        if(arr.length === 0) return alert("未识别有效单词，格式：英文|中文");
+        const existEn = state.groupData[state.activeGroup].map(w=>w.en);
+        arr.forEach(word=>{
+            if(!existEn.includes(word.en)) state.groupData[state.activeGroup].push(word);
+        })
+        saveAllGroupData();
+        el.importTextarea.value = "";
+        alert(`成功导入${arr.length}条单词`);
+    }
+    // 覆盖导入
+    el.replaceImportBtn.onclick = ()=>{
+        if(!confirm("覆盖当前分组所有原有单词？")) return;
+        const text = el.importTextarea.value;
+        const arr = parseImportText(text);
+        if(arr.length ===0) return alert("无有效单词");
+        state.groupData[state.activeGroup] = arr;
+        saveAllGroupData();
+        el.importTextarea.value = "";
+        alert(`已覆盖，共${arr.length}条单词`);
+    }
+    // 导出词库复制
+    el.exportWordBtn.onclick = async ()=>{
+        const list = state.groupData[state.activeGroup];
+        let txt = "";
+        list.forEach(w=>txt += `${w.en}|${w.cn}\n`);
+        await navigator.clipboard.writeText(txt);
+        alert("词库文本已复制，粘贴到记事本保存txt即可");
+    }
+    // 关闭配对面板
+    el.closeMatchBtn.onclick = ()=>{
+        el.matchMask.classList.remove("show");
+        renderLevelGrid();
+    }
+}
+// 进入普通闯关关卡
+function startLevel(lvNum){
+    state.currentLevel = lvNum;
+    state.qIndex = 0;
+    state.rightCount = 0;
+    state.wrongCount = 0;
+    state.combo = 0;
+    answeringLock = false;
+    clearTimeout(globalTimer);
+    el.homePanel.classList.remove("show");
+    el.answerPanel.classList.add("show");
+    el.levelTag.innerText = `${state.activeStar === 1 ? "一星" : "二星"} 第${lvNum}关`;
+    const modeInfo = CONFIG.modeList.find(m=>m.key === state.activeMode);
+    el.questionTip.innerText = modeInfo.tip;
+    if(state.activeMode === "listenToCn") el.listenSpeakerBtn.classList.add("show");
+    else el.listenSpeakerBtn.classList.remove("show");
+    const allWords = state.groupData[state.activeGroup] || [];
+    const startIdx = (lvNum - 1) * CONFIG.perLevelWordCount;
+    state.levelWordList = [...allWords].slice(startIdx, startIdx + CONFIG.perLevelWordCount);
+    renderQuestion();
+}
+// 错题复习初始化
+function startWrongReview(){
+    state.qIndex = 0;
+    state.rightCount = 0;
+    state.wrongCount = 0;
+    state.combo = 0;
+    answeringLock = false;
+    clearTimeout(globalTimer);
+    el.levelTag.innerText = "错题专项复习";
+    const modeInfo = CONFIG.modeList.find(m=>m.key === state.activeMode);
+    el.questionTip.innerText = modeInfo.tip;
+    if(state.activeMode === "listenToCn") el.listenSpeakerBtn.classList.add("show");
+    else el.listenSpeakerBtn.classList.remove("show");
+    state.levelWordList = [...state.wrongWords];
+    renderQuestion();
+}
+// 渲染题目
+function renderQuestion(){
+    const word = state.levelWordList[state.qIndex];
+    state.currentAudioWord = word.en;
+    const modeInfo = CONFIG.modeList.find(m=>m.key === state.activeMode);
+    if(state.activeMode === "cnToEn"){
+        el.qText.innerText = word.cn;
+    }else if(state.activeMode === "enToCn"){
+        el.qText.innerText = word.en;
+    }else if(state.activeMode === "listenToCn"){
+        el.qText.innerText = "";
+        setTimeout(()=>speakWord(word.en),300);
+    }
+    const options = getModeOptions(word, modeInfo.targetIsEn);
+    el.optionBox.innerHTML = "";
+    options.forEach(opt=>{
+        const div = document.createElement("div");
+        div.className = "answer-option";
+        if(modeInfo.targetIsEn){
+            div.innerHTML = `<span>${opt.en}</span><span class="voice-icon">🔊</span>`;
+        }else{
+            div.innerHTML = `<span>${opt.cn}</span>`;
+        }
+        div.onclick = e=>{
+            if(modeInfo.targetIsEn && e.target.classList.contains("voice-icon")){
+                e.stopPropagation();
+                speakWord(opt.en);
+                return;
+            }
+            selectAnswer(opt, word, modeInfo.targetIsEn);
+        }
+        el.optionBox.appendChild(div);
+    })
+    el.progressNum.innerText = `${state.qIndex+1}/${state.levelWordList.length}`;
+    el.rightNum.innerText = state.rightCount;
+    el.wrongNum.innerText = state.wrongCount;
+    el.comboNum.innerText = state.combo;
+}
+// 生成选项
+function getModeOptions(targetWord, needEn){
+    const allWords = state.groupData[state.activeGroup] || WORD_LIB;
+    if(needEn){
+        const pool = allWords.filter(w=>w.en !== targetWord.en);
+        const rand = pool.sort(()=>Math.random()-0.5).slice(0,3);
+        rand.push(targetWord);
+        return rand.sort(()=>Math.random()-0.5);
+    }else{
+        const pool = allWords.filter(w=>w.cn !== targetWord.cn);
+        const rand = pool.sort(()=>Math.random()-0.5).slice(0,3);
+        rand.push(targetWord);
+        return rand.sort(()=>Math.random()-0.5);
+    }
+}
+// 选择答案判断
+function selectAnswer(selWord, targetWord, targetIsEn){
+    if(answeringLock) return;
+    answeringLock = true;
+    clearTimeout(globalTimer);
+    const items = el.optionBox.querySelectorAll(".answer-option");
+    items.forEach(item=>{
+        const text = item.querySelector("span").innerText;
+        const rightText = targetIsEn ? targetWord.en : targetWord.cn;
+        const selText = targetIsEn ? selWord.en : selWord.cn;
+        if(text === rightText) item.classList.add("right");
+        if(text === selText && text !== rightText) item.classList.add("wrong");
+    })
+    speakWord(targetWord.en);
+    setTimeout(()=>{
+        const correct = targetIsEn ? selWord.en === targetWord.en : selWord.cn === targetWord.cn;
+        if(correct){
+            state.rightCount++;
+            state.combo++;
+            playTone("right");
+        }else{
+            state.wrongCount++;
+            state.combo = 0;
+            playTone("wrong");
+            if(!state.useWrongLib){
+                const repeat = state.wrongWords.some(w=>w.en === targetWord.en);
+                if(!repeat){
+                    state.wrongWords.push(targetWord);
+                    const allWrong = Storage.get(CONFIG.storageKeyWrong) || {};
+                    allWrong[state.activeGroup] = state.wrongWords;
+                    Storage.set(CONFIG.storageKeyWrong, allWrong);
+                }
+            }
+        }
+        globalTimer = setTimeout(()=>{
+            answeringLock = false;
+            state.qIndex++;
+            if(state.qIndex >= state.levelWordList.length){
+                finishLevel();
+                return;
+            }
+            renderQuestion();
+        },1000);
+    },600);
+}
+// 关卡完成弹窗
+function finishLevel(){
+    clearTimeout(globalTimer);
+    answeringLock = false;
+    el.listenSpeakerBtn.classList.remove("show");
+    if(!state.useWrongLib){
+        const key = `star${state.activeStar}_lv${state.currentLevel}`;
+        state.progress[key] = CONFIG.perLevelWordCount;
+        const allProg = Storage.get(CONFIG.storageKeyProgress) || {};
+        allProg[state.activeGroup] = state.progress;
+        Storage.set(CONFIG.storageKeyProgress, allProg);
+    }
+    const total = state.rightCount + state.wrongCount;
+    const rate = total > 0 ? Math.round(state.rightCount / total * 100) : 0;
+    alert(`本关完成！
+正确：${state.rightCount} 错误：${state.wrongCount}
+最高连击：${state.combo} 正确率：${rate}%`);
+    el.homePanel.classList.add("show");
+    el.answerPanel.classList.remove("show");
+    renderLevelGrid();
+}
+// 连线配对模式
+function openMatchMode(){
+    const words = [...(state.groupData[state.activeGroup] || WORD_LIB)].slice(0, CONFIG.perLevelWordCount);
+    state.matchRightNum = 0;
+    state.matchSelectCard = null;
+    el.matchRight.innerText = 0;
+    el.matchTotal.innerText = words.length;
+    el.matchMask.classList.add("show");
+    renderMatchCards(words);
+}
+function renderMatchCards(wordList){
+    el.matchCardBox.innerHTML = "";
+    let arr = [];
+    wordList.forEach(w=>{
+        arr.push({type:"en", content:w.en, data:w});
+        arr.push({type:"cn", content:w.cn, data:w});
+    })
+    arr = arr.sort(()=>Math.random()-0.5);
+    arr.forEach(info=>{
+        const div = document.createElement("div");
+        div.className = "match-card";
+        div.innerText = info.content;
+        div.dataset.type = info.type;
+        div.dataset.en = info.data.en;
+        div.onclick = ()=> clickMatchCard(div, info.data);
+        el.matchCardBox.appendChild(div);
+    })
+}
+function clickMatchCard(dom, word){
+    if(dom.classList.contains("match")) return;
+    if(!state.matchSelectCard){
+        state.matchSelectCard = {dom, word};
+        dom.classList.add("select");
+        if(dom.dataset.type === "en") speakWord(word.en);
+        return;
+    }
+    const first = state.matchSelectCard;
+    first.dom.classList.remove("select");
+    dom.classList.remove("select");
+    const ok = first.word.en === word.en && first.dom.dataset.type !== dom.dataset.type;
+    if(ok){
+        first.dom.classList.add("match");
+        dom.classList.add("match");
+        state.matchRightNum++;
+        el.matchRight.innerText = state.matchRightNum;
+        playTone("right");
+        setTimeout(()=>{
+            const allMatch = el.matchCardBox.querySelectorAll(".match").length;
+            const total = el.matchCardBox.querySelectorAll(".match-card").length;
+            if(allMatch >= total){
+                setTimeout(()=>{
+                    alert(`配对全部完成，共${state.matchRightNum}组单词`);
+                    el.matchMask.classList.remove("show");
+                    renderLevelGrid();
+                },600);
+            }
+        },450);
+    }else{
+        playTone("wrong");
+    }
+    state.matchSelectCard = null;
+}
+// 页面初始化入口
+function init(){
+    const localSet = Storage.get(CONFIG.storageKeySetting);
+    if(localSet){
+        AUDIO_CFG.voiceAccent = localSet.voice;
+        AUDIO_CFG.soundEnable = localSet.sound;
+        CONFIG.perLevelWordCount = localSet.perLevel;
+    }
+    el.voiceSet.value = AUDIO_CFG.voiceAccent;
+    el.perLevelSet.value = CONFIG.perLevelWordCount;
+    el.soundSwitch.checked = AUDIO_CFG.soundEnable;
+
+    // 加载分组数据
+    const saveGL = Storage.get(CONFIG.storageKeyGroupList);
+    const saveGD = Storage.get(CONFIG.storageKeyGroupData);
+    const saveAG = Storage.get(CONFIG.storageKeyActiveGroup);
+    if(saveGL) state.groupList = saveGL;
+    if(saveGD) state.groupData = saveGD;
+    if(saveAG && state.groupList.includes(saveAG)) state.activeGroup = saveAG;
+    if(!state.groupData[state.activeGroup]){
+        state.groupData["课标基础组"] = [...WORD_LIB];
+        saveAllGroupData();
+    }
+    const allProg = Storage.get(CONFIG.storageKeyProgress) || {};
+    state.progress = allProg[state.activeGroup] || {};
+    const allWrong = Storage.get(CONFIG.storageKeyWrong) || {};
+    state.wrongWords = allWrong[state.activeGroup] || [];
+
+    bindAllEvent();
+    renderGroupSelect();
+    renderLevelGrid();
+    window.speechSynthesis.getVoices();
+}
+// 启动页面
+window.onload = init;
+</script>
+</body>
+</html>
