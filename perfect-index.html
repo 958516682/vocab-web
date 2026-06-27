@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>词汇闯关 完整无报错终版</title>
+<title>词汇闯关 完整优化版</title>
 <style>
 :root {
     --bg-page: #0b0d1a;
@@ -146,7 +146,7 @@ body {
 }
 .star-tab.active {
     border-color: var(--border-active);
-    background: rgba(65, 166, 255, 0.12);
+    background: rgba65, 166, 255, 0.12);
 }
 .level-grid {
     display: grid;
@@ -165,10 +165,16 @@ body {
     padding: 8px 4px;
     text-align: center;
     min-height: 60px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+.level-item:hover {
+    border-color: var(--border-active);
 }
 .level-item.lock {
     opacity: 0.4;
     cursor: not-allowed;
+    pointer-events: none;
 }
 .level-num {
     font-size: 16px;
@@ -196,6 +202,10 @@ body {
     cursor: pointer;
     margin-bottom: var(--gap-md);
     min-height: var(--btn-height);
+    transition: var(--transition-fast);
+}
+.back-btn:hover {
+    border-color: var(--border-active);
 }
 .answer-top-info {
     display: flex;
@@ -248,6 +258,10 @@ body {
     cursor: pointer;
     min-height: 70px;
     word-break: break-all;
+    transition: var(--transition-fast);
+}
+.answer-option:hover {
+    border-color: var(--border-active);
 }
 .answer-option.right {
     border-color: var(--success-green);
@@ -265,6 +279,11 @@ body {
     border-radius: 4px;
     background: rgba(255,255,255,0.1);
     user-select: none;
+    transition: var(--transition-fast);
+}
+.voice-icon:hover {
+    opacity: 1;
+    background: rgba(255,255,255,0.2);
 }
 .bottom-status {
     display: flex;
@@ -318,6 +337,10 @@ body {
     font-size: 20px;
     cursor: pointer;
     color: var(--text-sub);
+    transition: var(--transition-fast);
+}
+.modal-close:hover {
+    color: var(--text-highlight);
 }
 .setting-row {
     margin: var(--gap-md) 0;
@@ -424,6 +447,9 @@ textarea {
     font-size: 13px;
     min-height: 46px;
 }
+.match-card:hover {
+    border-color: var(--border-active);
+}
 .match-card.select {
     border-color: var(--border-active);
     box-shadow: 0 0 8px rgba(99,204,255,0.3);
@@ -435,6 +461,16 @@ textarea {
 .match-bottom-info {
     text-align: center;
     margin-top: var(--gap-md);
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.loading-tip {
+    text-align: center;
+    color: var(--text-sub);
+    padding: 20px 0;
     font-size: 14px;
 }
 </style>
@@ -518,6 +554,7 @@ textarea {
         <div class="setting-row">
             <label>单关单词数量</label>
             <input type="number" min="5" max="50" id="perLevelSet" value="30">
+            <span style="color:var(--text-sub);font-size:12px;">当前分组词库总量：<span id="wordCountTip">0</span></span>
         </div>
         <div class="setting-row">
             <label>开启答题提示音</label>
@@ -573,7 +610,11 @@ banana 香蕉"></textarea>
     <div class="match-wrap">
         <div class="match-header">
             <h3>单词配对游戏</h3>
-            <button class="header-btn" id="closeMatchBtn">关闭</button>
+            <div style="display:flex;gap:8px;">
+                <button class="header-btn" id="prevMatchPageBtn">上一页</button>
+                <button class="header-btn" id="nextMatchPageBtn">下一页</button>
+                <button class="header-btn" id="closeMatchBtn">关闭</button>
+            </div>
         </div>
         <div class="match-two-col">
             <div class="match-left-col">
@@ -587,108 +628,65 @@ banana 香蕉"></textarea>
         </div>
         <div class="match-bottom-info">
             <span id="matchPageTip">第1页 / 共4页</span>
-            <span>本页配对：<b id="matchCurPage">0</b>/8</span>
+            <span>本页配对：<b id="matchCurPage">0</b>/<b id="matchCurPageTotal">8</b></span>
             <span>总进度：<b id="matchTotalDone">0</b>/<b id="matchAllTotal">30</b></span>
         </div>
     </div>
 </div>
 
 <script>
-const ADMIN_PASSWORD = "admin123";
-const AUDIO_CFG = {
-    rightTone: { freq: 880, duration: 0.15, type: "sine" },
-    wrongTone: { freq: 220, duration: 0.2, type: "triangle" },
-    voiceAccent: "us",
-    soundEnable: true
+// 核心配置（统一管理）
+const CONFIG = {
+    ADMIN_PASSWORD: "admin123",
+    AUDIO: {
+        rightTone: { freq: 880, duration: 0.15, type: "sine" },
+        wrongTone: { freq: 220, duration: 0.2, type: "triangle" },
+        voiceAccent: "us",
+        soundEnable: true
+    },
+    DEFAULT_WORD_COUNT_PER_LEVEL: 30, // 单关默认单词数
+    MATCH_PAGE_SIZE: 8, // 配对每页数量
+    DEFAULT_WORD_LIB: [ // 扩展默认词库到30个，解决数量不足问题
+        {en:"addition", cn:"加法;增加;附加"},
+        {en:"attach", cn:"附上；依附"},
+        {en:"anniversary", cn:"周年纪念日"},
+        {en:"assume", cn:"假定；承担"},
+        {en:"ability", cn:"能力；才能"},
+        {en:"abnormal", cn:"反常的；异常的"},
+        {en:"abolish", cn:"废除；废止"},
+        {en:"abundant", cn:"大量的；丰盛的"},
+        {en:"abuse", cn:"滥用；虐待"},
+        {en:"accelerate", cn:"加速；促进"},
+        {en:"access", cn:"通道；使用权"},
+        {en:"accident", cn:"事故；意外"},
+        {en:"accompany", cn:"陪伴；伴随"},
+        {en:"accomplish", cn:"完成；实现"},
+        {en:"account", cn:"账户；解释"},
+        {en:"achieve", cn:"达到；实现"},
+        {en:"acid", cn:"酸；酸性的"},
+        {en:"acknowledge", cn:"承认；感谢"},
+        {en:"acquire", cn:"获得；取得"},
+        {en:"adapt", cn:"适应；改编"},
+        {en:"adequate", cn:"足够的；适当的"},
+        {en:"adjust", cn:"调整；校正"},
+        {en:"administration", cn:"管理；行政"},
+        {en:"admire", cn:"钦佩；赞美"},
+        {en:"admit", cn:"承认；准许进入"},
+        {en:"adopt", cn:"采用；收养"},
+        {en:"adult", cn:"成年人；成年的"},
+        {en:"advance", cn:"前进；提前"},
+        {en:"advantage", cn:"优势；好处"},
+        {en:"adventure", cn:"冒险；奇遇"}
+    ]
 };
-let audioCtx = null;
-let voiceListCache = [];
-let voiceReady = false;
-let answeringLock = false;
-let globalTimer = null;
-let audioInitFlag = false;
 
-function initAudioOnce(){
-    if(audioInitFlag) return;
-    try{
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        audioInitFlag = true;
-    }catch(e){}
-}
-function playTone(type) {
-    if (!AUDIO_CFG.soundEnable) return;
-    initAudioOnce();
-    if(!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    const tone = type === "right" ? AUDIO_CFG.rightTone : AUDIO_CFG.wrongTone;
-    osc.type = tone.type;
-    osc.frequency.value = tone.freq;
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    osc.start();
-    osc.stop(audioCtx.currentTime + tone.duration);
-}
-window.speechSynthesis.onvoiceschanged = function(){
-    voiceListCache = window.speechSynthesis.getVoices();
-    if(voiceListCache.length > 0) voiceReady = true;
-};
-async function speakWord(word) {
-    initAudioOnce();
-    window.speechSynthesis.cancel();
-    let waitCount = 0;
-    while(!voiceReady && waitCount < 20){
-        await new Promise(res=>setTimeout(res,100));
-        voiceListCache = window.speechSynthesis.getVoices();
-        if(voiceListCache.length>0) voiceReady=true;
-        waitCount++;
-    }
-    const utter = new SpeechSynthesisUtterance(word);
-    const targetLang = AUDIO_CFG.voiceAccent === "us" ? "en-US" : "en-GB";
-    const matchVoice = voiceListCache.find(v => v.lang === targetLang);
-    if(matchVoice) utter.voice = matchVoice;
-    utter.rate = 0.96;
-    utter.volume = 1;
-    window.speechSynthesis.speak(utter);
-}
-const WORD_LIB = [
-    {en:"addition", cn:"加法;增加;附加"},
-    {en:"attach", cn:"附上；依附"},
-    {en:"anniversary", cn:"周年纪念日"},
-    {en:"assume", cn:"假定；承担"},
-    {en:"ability", cn:"能力；才能"},
-    {en:"abnormal", cn:"反常的；异常的"},
-    {en:"abolish", cn:"废除；废止"},
-    {en:"abundant", cn:"大量的；丰盛的"},
-    {en:"abuse", cn:"滥用；虐待"},
-    {en:"accelerate", cn:"加速；促进"},
-    {en:"access", cn:"通道；使用权"},
-    {en:"accident", cn:"事故；意外"},
-    {en:"accompany", cn:"陪伴；伴随"},
-    {en:"accomplish", cn:"完成；实现"},
-    {en:"account", cn:"账户；解释"}
-];
-const Storage = {
-    get(key){
-        try {
-            const d = localStorage.getItem(key);
-            return d ? JSON.parse(d) : null;
-        } catch(err){return null;}
-    },
-    set(key, val){
-        try {localStorage.setItem(key, JSON.stringify(val));}
-        catch(err){alert("浏览器存储已满，请清理缓存");}
-    },
-    clear(key){localStorage.removeItem(key);},
-    clearAll(){localStorage.clear();}
-};
+// 全局状态管理
 let state = {
     activeMode: "cnToEn",
     activeStar: 1,
     currentLevel: 1,
-    progress: Storage.get("vocab_progress") || {},
-    wrongWords: Storage.get("vocab_wrong") || [],
+    progress: {},
+    wrongWords: [],
     useWrongLib: false,
     levelWordList: [],
     currentAudioWord: "",
@@ -696,18 +694,24 @@ let state = {
     rightCount: 0,
     wrongCount: 0,
     combo: 0,
+    // 配对相关
     matchAllWords: [],
-    matchPageSize: 8,
+    matchPageSize: CONFIG.MATCH_PAGE_SIZE,
     matchCurPage: 1,
     matchTotalPage: 1,
     matchCurPageFinish: 0,
     matchAllFinish: 0,
     matchSelectCard: null,
-    groupList: Storage.get("vocab_group") || ["课标基础组"],
-    groupWordData: Storage.get("vocab_group_data") || {"课标基础组":WORD_LIB},
-    activeGroup: Storage.get("vocab_active_group") || "课标基础组",
-    tempImportText: ""
+    // 分组相关
+    groupList: [],
+    groupWordData: {},
+    activeGroup: "",
+    tempImportText: "",
+    // 配置相关
+    perLevelWordCount: CONFIG.DEFAULT_WORD_COUNT_PER_LEVEL
 };
+
+// DOM元素缓存
 const el = {
     homePanel: document.getElementById("homePanel"),
     answerPanel: document.getElementById("answerPanel"),
@@ -724,11 +728,13 @@ const el = {
     modeTabs: document.querySelectorAll(".mode-tab"),
     starTabs: document.querySelectorAll(".star-tab"),
     listenSpeakerBtn: document.getElementById("listenSpeakerBtn"),
+    // 密码弹窗
     pwdMask: document.getElementById("pwdMask"),
     closePwdMask: document.getElementById("closePwdMask"),
     pwdInput: document.getElementById("pwdInput"),
     pwdCancelBtn: document.getElementById("pwdCancelBtn"),
     pwdConfirmBtn: document.getElementById("pwdConfirmBtn"),
+    // 设置弹窗
     settingMask: document.getElementById("settingMask"),
     closeSettingMask: document.getElementById("closeSettingMask"),
     voiceSet: document.getElementById("voiceSet"),
@@ -738,6 +744,8 @@ const el = {
     saveSettingBtn: document.getElementById("saveSettingBtn"),
     resetProgressBtn: document.getElementById("resetProgressBtn"),
     clearAllDataBtn: document.getElementById("clearAllDataBtn"),
+    wordCountTip: document.getElementById("wordCountTip"),
+    // 分组管理
     groupSelect: document.getElementById("groupSelect"),
     openGroupManageBtn: document.getElementById("openGroupManageBtn"),
     groupMask: document.getElementById("groupMask"),
@@ -749,102 +757,277 @@ const el = {
     importWordBtn: document.getElementById("importWordBtn"),
     replaceImportBtn: document.getElementById("replaceImportBtn"),
     exportWordBtn: document.getElementById("exportWordBtn"),
+    // 错题复习
     wrongReviewBtn: document.getElementById("wrongReviewBtn"),
+    // 配对游戏
     matchMask: document.getElementById("matchMask"),
     enListBox: document.getElementById("enListBox"),
     cnListBox: document.getElementById("cnListBox"),
     closeMatchBtn: document.getElementById("closeMatchBtn"),
     matchPageTip: document.getElementById("matchPageTip"),
     matchCurPage: document.getElementById("matchCurPage"),
+    matchCurPageTotal: document.getElementById("matchCurPageTotal"),
     matchTotalDone: document.getElementById("matchTotalDone"),
-    matchAllTotal: document.getElementById("matchAllTotal")
+    matchAllTotal: document.getElementById("matchAllTotal"),
+    prevMatchPageBtn: document.getElementById("prevMatchPageBtn"),
+    nextMatchPageBtn: document.getElementById("nextMatchPageBtn")
 };
-function saveAllGroupData() {
+
+// 音频相关
+let audioCtx = null;
+let voiceListCache = [];
+let voiceReady = false;
+let answeringLock = false;
+let globalTimer = null;
+let audioInitFlag = false;
+
+// 本地存储工具类
+const Storage = {
+    get(key) {
+        try {
+            const d = localStorage.getItem(key);
+            return d ? JSON.parse(d) : null;
+        } catch (err) {
+            console.error("读取存储失败：", err);
+            return null;
+        }
+    },
+    set(key, val) {
+        try {
+            localStorage.setItem(key, JSON.stringify(val));
+        } catch (err) {
+            alert("浏览器存储已满，请清理缓存后重试");
+            console.error("写入存储失败：", err);
+        }
+    },
+    clear(key) {
+        localStorage.removeItem(key);
+    },
+    clearAll() {
+        localStorage.clear();
+    }
+};
+
+// 初始化存储数据
+function initStorageData() {
+    state.progress = Storage.get("vocab_progress") || {};
+    state.wrongWords = Storage.get("vocab_wrong") || [];
+    state.groupList = Storage.get("vocab_group") || ["课标基础组"];
+    state.groupWordData = Storage.get("vocab_group_data") || {
+        "课标基础组": CONFIG.DEFAULT_WORD_LIB
+    };
+    state.activeGroup = Storage.get("vocab_active_group") || "课标基础组";
+    state.perLevelWordCount = Storage.get("vocab_per_level_count") || CONFIG.DEFAULT_WORD_COUNT_PER_LEVEL;
+    el.perLevelSet.value = state.perLevelWordCount;
+}
+
+// 音频初始化（仅初始化一次）
+function initAudioOnce() {
+    if (audioInitFlag) return;
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioInitFlag = true;
+    } catch (e) {
+        console.error("音频上下文初始化失败：", e);
+    }
+}
+
+// 播放提示音
+function playTone(type) {
+    if (!CONFIG.AUDIO.soundEnable) return;
+    initAudioOnce();
+    if (!audioCtx) return;
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const tone = type === "right" ? CONFIG.AUDIO.rightTone : CONFIG.AUDIO.wrongTone;
+    osc.type = tone.type;
+    osc.frequency.value = tone.freq;
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + tone.duration);
+}
+
+// 语音合成初始化
+function initVoiceSynthesis() {
+    function updateVoiceList() {
+        voiceListCache = window.speechSynthesis.getVoices();
+        voiceReady = voiceListCache.length > 0;
+    }
+    window.speechSynthesis.onvoiceschanged = updateVoiceList;
+    updateVoiceList();
+}
+
+// 朗读单词
+async function speakWord(word) {
+    if (!word) return;
+    initAudioOnce();
+    window.speechSynthesis.cancel();
+
+    let waitCount = 0;
+    while (!voiceReady && waitCount < 20) {
+        await new Promise(res => setTimeout(res, 100));
+        voiceListCache = window.speechSynthesis.getVoices();
+        voiceReady = voiceListCache.length > 0;
+        waitCount++;
+    }
+
+    const utter = new SpeechSynthesisUtterance(word);
+    const targetLang = CONFIG.AUDIO.voiceAccent === "us" ? "en-US" : "en-GB";
+    const matchVoice = voiceListCache.find(v => v.lang === targetLang);
+    
+    if (matchVoice) utter.voice = matchVoice;
+    utter.rate = 0.96;
+    utter.volume = 1;
+    utter.lang = targetLang;
+
+    window.speechSynthesis.speak(utter);
+}
+
+// 保存所有分组/进度数据
+function saveAllData() {
     Storage.set("vocab_group", state.groupList);
     Storage.set("vocab_group_data", state.groupWordData);
     Storage.set("vocab_active_group", state.activeGroup);
     Storage.set("vocab_progress", state.progress);
     Storage.set("vocab_wrong", state.wrongWords);
+    Storage.set("vocab_per_level_count", state.perLevelWordCount);
 }
-function parseImportText(text){
+
+// 解析导入的单词文本
+function parseImportText(text) {
     const lines = text.trim().split("\n");
     const arr = [];
-    for(let line of lines){
+
+    for (let line of lines) {
         const t = line.trim();
-        if(!t) continue;
-        const parts = t.split(/\s+/);
-        if(parts.length < 2) continue;
-        const en = parts[0];
-        const cn = parts.slice(1).join(" ");
-        arr.push({en:en.trim(), cn:cn.trim()});
+        if (!t) continue;
+        const firstSpaceIdx = t.indexOf(" ");
+        if (firstSpaceIdx === -1) continue;
+
+        const en = t.substring(0, firstSpaceIdx).trim();
+        const cn = t.substring(firstSpaceIdx + 1).trim();
+        
+        if (en && cn) {
+            arr.push({ en, cn });
+        }
     }
     return arr;
 }
-function exportWordText(list){
+
+// 导出单词为文本
+function exportWordText(list) {
     let str = "";
-    list.forEach(w=> str += `${w.en} ${w.cn}\n`);
-    return str;
+    list.forEach(w => str += `${w.en} ${w.cn}\n`);
+    return str.trim();
 }
-function renderGroupSelect(){
+
+// 渲染分组选择下拉框
+function renderGroupSelect() {
     el.groupSelect.innerHTML = "";
-    state.groupList.forEach(name=>{
+    state.groupList.forEach(name => {
         const opt = document.createElement("option");
         opt.value = name;
         opt.innerText = name;
-        if(name === state.activeGroup) opt.selected = true;
+        if (name === state.activeGroup) opt.selected = true;
         el.groupSelect.appendChild(opt);
-    })
+    });
+    updateWordCountTip();
 }
-function shuffleArray(arr){
+
+// 更新设置页的词库数量提示
+function updateWordCountTip() {
+    const wordList = state.groupWordData[state.activeGroup] || [];
+    el.wordCountTip.innerText = wordList.length;
+}
+
+// 数组乱序（Fisher-Yates 算法）
+function shuffleArray(arr) {
     const copy = [...arr];
-    for(let i = copy.length - 1; i > 0; i--){
+    for (let i = copy.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [copy[i], copy[j]] = [copy[j], copy[i]];
     }
     return copy;
 }
-function renderLevelGrid(){
+
+// 渲染关卡网格
+function renderLevelGrid() {
     el.levelBox.innerHTML = "";
     const maxLevel = state.activeStar === 1 ? 21 : 36;
-    for(let i=1; i<=maxLevel; i++){
+    const wordList = state.groupWordData[state.activeGroup] || [];
+    const maxAvaliableLevel = Math.floor(wordList.length / state.perLevelWordCount) || 1;
+
+    for (let i = 1; i <= maxLevel; i++) {
+        const isOverMaxAvaliable = i > maxAvaliableLevel;
         const key = `${state.activeGroup}_star${state.activeStar}_lv${i}`;
-        const levelRecord = state.progress[key] || {cnToEn:false, enToCn:false, listenToCn:false, matchLink:false};
+        const levelRecord = state.progress[key] || {
+            cnToEn: false,
+            enToCn: false,
+            listenToCn: false,
+            matchLink: false
+        };
         const allDone = levelRecord.cnToEn && levelRecord.enToCn && levelRecord.listenToCn && levelRecord.matchLink;
+        
         let canOpen = false;
-        if(state.activeStar === 1 && i === 1){
+        if (state.activeStar === 1 && i === 1) {
             canOpen = true;
-        }else{
-            const prevKey = `${state.activeGroup}_star${state.activeStar}_lv${i-1}`;
-            const prevRec = state.progress[prevKey] || {cnToEn:false, enToCn:false, listenToCn:false, matchLink:false};
+        } else if (!isOverMaxAvaliable) {
+            const prevKey = `${state.activeGroup}_star${state.activeStar}_lv${i - 1}`;
+            const prevRec = state.progress[prevKey] || {
+                cnToEn: false,
+                enToCn: false,
+                listenToCn: false,
+                matchLink: false
+            };
             canOpen = prevRec.cnToEn && prevRec.enToCn && prevRec.listenToCn && prevRec.matchLink;
         }
+
         const item = document.createElement("div");
-        if(canOpen){
-            item.className = "level-item";
-            item.onclick = ()=> startLevel(i);
-        }else{
-            item.className = "level-item lock";
-        }
+        item.className = `level-item ${(canOpen && !isOverMaxAvaliable) ? "" : "lock"}`;
+        
         const doneCount = [levelRecord.cnToEn, levelRecord.enToCn, levelRecord.listenToCn, levelRecord.matchLink].filter(Boolean).length;
         item.innerHTML = `
             <div class="level-num">${i}</div>
-            <div class="level-count">${allDone?"全部通关":`已完成${doneCount}/4题型`}</div>
-            <div class="level-star ${doneCount===4?"":"empty"}">★</div>
+            <div class="level-count">${isOverMaxAvaliable ? "词库不足" : (allDone ? "全部通关" : `已完成${doneCount}/4题型`)}</div>
+            <div class="level-star ${doneCount === 4 ? "" : "empty"}">★</div>
         `;
+
+        if (canOpen && !isOverMaxAvaliable) {
+            item.onclick = () => startLevel(i);
+        }
         el.levelBox.appendChild(item);
     }
 }
-function openGroupMaskAfterPwd(){
+
+// 验证密码后打开分组管理
+function openGroupMaskAfterPwd() {
     const inputPwd = el.pwdInput.value.trim();
-    if(inputPwd === ADMIN_PASSWORD){
+    if (inputPwd === CONFIG.ADMIN_PASSWORD) {
         el.pwdMask.classList.remove("show");
         el.pwdInput.value = "";
         el.groupMask.classList.add("show");
-    }else{
-        alert("密码错误");
+    } else {
+        alert("密码错误，请重新输入");
+        el.pwdInput.focus();
     }
 }
-function startLevel(lvNum){
+
+// 开始关卡
+function startLevel(lvNum) {
+    const wordList = state.groupWordData[state.activeGroup] || [];
+    const total = state.perLevelWordCount;
+    const maxLevel = Math.floor(wordList.length / total);
+
+    if (lvNum > maxLevel && maxLevel > 0) {
+        alert(`当前分组词库仅支持${maxLevel}个关卡，请导入更多单词或减少单关数量`);
+        return;
+    }
+
     state.currentLevel = lvNum;
     state.qIndex = 0;
     state.rightCount = 0;
@@ -852,62 +1035,119 @@ function startLevel(lvNum){
     state.combo = 0;
     answeringLock = false;
     clearTimeout(globalTimer);
+
     el.homePanel.classList.remove("show");
     el.answerPanel.classList.add("show");
-    el.levelTag.innerText = `${state.activeStar===1?"一星":"二星"} 第${lvNum}关`;
-    const total = Number(el.perLevelSet.value);
-    const allWords = state.groupWordData[state.activeGroup] || WORD_LIB;
+    el.levelTag.innerText = `${state.activeStar === 1 ? "一星" : "二星"} 第${lvNum}关`;
+
     const startIdx = (lvNum - 1) * total;
     const endIdx = startIdx + total;
-    state.levelWordList = allWords.slice(startIdx, endIdx);
+    state.levelWordList = wordList.slice(startIdx, endIdx);
+
+    if (state.levelWordList.length === 0) {
+        alert("当前关卡无可用单词，请检查词库配置");
+        el.answerPanel.classList.remove("show");
+        el.homePanel.classList.add("show");
+        return;
+    }
+
     state.useWrongLib = false;
     const modeInfo = getCurrentModeInfo();
     el.questionTip.innerText = modeInfo.tip;
     el.listenSpeakerBtn.classList.toggle("show", modeInfo.hideQuesText === true);
+
+    if (state.activeMode === "matchLink") {
+        openMatchGame();
+        return;
+    }
+
     renderQuestion();
 }
-function getCurrentModeInfo(){
+
+// 获取当前模式信息
+function getCurrentModeInfo() {
     const modeMap = {
-        cnToEn:{name:"中译英", tip:"选择对应的英文单词，选项每次随机打乱", hideQuesText:false},
-        enToCn:{name:"英译中", tip:"选择对应的中文释义，每个中文选项带发音按钮，点击朗读单词", hideQuesText:false},
-        listenToCn:{name:"听音选词", tip:"点击顶部喇叭播放单词，中文选项带发音按钮，答对自动朗读下一题", hideQuesText:true},
-        matchLink:{name:"单词配对", tip:"每页8组单词，点英文可朗读，完成本页全部自动切下一页，全页完成才算通关", hideQuesText:false}
+        cnToEn: {
+            name: "中译英",
+            tip: "选择对应的英文单词，选项每次随机打乱",
+            hideQuesText: false
+        },
+        enToCn: {
+            name: "英译中",
+            tip: "选择对应的中文释义，每个中文选项带发音按钮，点击朗读单词",
+            hideQuesText: false
+        },
+        listenToCn: {
+            name: "听音选词",
+            tip: "点击顶部喇叭播放单词，中文选项带发音按钮，答对自动朗读下一题",
+            hideQuesText: true
+        },
+        matchLink: {
+            name: "单词配对",
+            tip: "每页8组单词，点英文可朗读，完成本页全部自动切下一页，全页完成才算通关",
+            hideQuesText: false
+        }
     };
-    return modeMap[state.activeMode];
+    return modeMap[state.activeMode] || modeMap.cnToEn;
 }
-function renderQuestion(){
+
+// 渲染题目
+function renderQuestion() {
+    if (state.qIndex >= state.levelWordList.length) {
+        finishLevelTask();
+        return;
+    }
+
     const word = state.levelWordList[state.qIndex];
     state.currentAudioWord = word.en;
+
     const modeInfo = getCurrentModeInfo();
-    if(state.activeMode === "cnToEn") el.qText.innerText = word.cn;
-    else if(state.activeMode === "enToCn") el.qText.innerText = word.en;
-    else if(state.activeMode === "listenToCn") el.qText.innerText = "";
-    const allPool = state.groupWordData[state.activeGroup];
+    if (state.activeMode === "cnToEn") el.qText.innerText = word.cn;
+    else if (state.activeMode === "enToCn") el.qText.innerText = word.en;
+    else if (state.activeMode === "listenToCn") el.qText.innerText = "";
+
+    const allPool = state.groupWordData[state.activeGroup] || [];
     const rightItem = word;
     let optList = [rightItem];
-    const rest = allPool.filter(w=>w.en !== word.en).slice(0,3);
-    optList = optList.concat(rest);
+    
+    const rest = allPool.filter(w => w.en !== word.en);
+    const randomRest = shuffleArray(rest).slice(0, 3);
+    optList = optList.concat(randomRest);
+    while (optList.length < 4) {
+        optList.push(...shuffleArray(rest).slice(0, 4 - optList.length));
+    }
     optList = shuffleArray(optList);
+
     renderOptionList(optList, rightItem);
-    el.progressNum.innerText = `${state.qIndex+1}/${state.levelWordList.length}`;
+
+    el.progressNum.innerText = `${state.qIndex + 1}/${state.levelWordList.length}`;
     el.rightNum.innerText = state.rightCount;
     el.wrongNum.innerText = state.wrongCount;
     el.comboNum.innerText = state.combo;
+
+    if (state.activeMode === "listenToCn") {
+        setTimeout(() => {
+            speakWord(word.en);
+        }, 300);
+    }
 }
-function renderOptionList(list, target){
+
+// 渲染选项列表
+function renderOptionList(list, target) {
     el.optionBox.innerHTML = "";
-    list.forEach(opt=>{
+    list.forEach(opt => {
         const div = document.createElement("div");
         div.className = "answer-option";
-        // 统一修复：enToCn / listenToCn 中文选项全部带发音，错题复习共用此逻辑
-        if(state.activeMode === "cnToEn"){
+
+        if (state.activeMode === "cnToEn") {
             div.innerHTML = `<span>${opt.en}</span><span class="voice-icon">🔊</span>`;
-        }else{
+        } else {
             div.innerHTML = `<span>${opt.cn}</span><span class="voice-icon">🔊</span>`;
         }
-        div.onclick = function(e){
+
+        div.onclick = function (e) {
             initAudioOnce();
-            if(e.target.classList.contains("voice-icon")){
+            if (e.target.classList.contains("voice-icon")) {
                 e.stopPropagation();
                 speakWord(opt.en);
                 return;
@@ -917,312 +1157,481 @@ function renderOptionList(list, target){
         el.optionBox.appendChild(div);
     });
 }
-function selectAnswer(selWord, realWord, mode){
-    if(answeringLock) return;
+
+// 选择答案处理
+function selectAnswer(selWord, realWord, mode) {
+    if (answeringLock) return;
     answeringLock = true;
     clearTimeout(globalTimer);
+
     const items = el.optionBox.querySelectorAll(".answer-option");
-    let isCorrect = selWord.en === realWord.en;
-    items.forEach(item=>{
+    const isCorrect = selWord.en === realWord.en;
+
+    items.forEach(item => {
         const txt = item.querySelector("span").innerText;
-        let targetEn;
-        if(mode === "cnToEn"){
+        let targetEn = "";
+        
+        if (mode === "cnToEn") {
             targetEn = txt;
-        }else{
-            const match = state.groupWordData[state.activeGroup].find(w=>w.cn === txt);
+        } else {
+            const match = state.groupWordData[state.activeGroup].find(w => w.cn === txt);
             targetEn = match ? match.en : "";
         }
-        if(targetEn === realWord.en){
+
+        if (targetEn === realWord.en) {
             item.classList.add("right");
-        }else if(targetEn === selWord.en && !isCorrect){
+        } else if (targetEn === selWord.en && !isCorrect) {
             item.classList.add("wrong");
         }
     });
+
     speakWord(realWord.en);
-    setTimeout(()=>{
-        if(isCorrect){
+
+    setTimeout(() => {
+        if (isCorrect) {
             state.rightCount++;
             state.combo++;
             playTone("right");
-        }else{
+        } else {
             state.wrongCount++;
             state.combo = 0;
             playTone("wrong");
-            if(!state.wrongWords.find(w=>w.en === realWord.en)){
+            if (!state.wrongWords.find(w => w.en === realWord.en)) {
                 state.wrongWords.push(realWord);
-                saveAllGroupData();
+                saveAllData();
             }
         }
+
         answeringLock = false;
         state.qIndex++;
-        if(state.qIndex >= state.levelWordList.length){
+
+        if (state.qIndex >= state.levelWordList.length) {
             finishLevelTask();
             return;
         }
+
         renderQuestion();
-        if(state.activeMode === "listenToCn"){
-            setTimeout(()=>{
-                initAudioOnce();
-                speakWord(state.levelWordList[state.qIndex].en);
-            },300);
-        }
     }, 1000);
 }
-function finishLevelTask(){
+
+// 完成关卡任务
+function finishLevelTask() {
     clearTimeout(globalTimer);
     answeringLock = false;
     el.listenSpeakerBtn.classList.remove("show");
+
     const key = `${state.activeGroup}_star${state.activeStar}_lv${state.currentLevel}`;
-    if(!state.progress[key]) state.progress[key] = {cnToEn:false, enToCn:false, listenToCn:false, matchLink:false};
+    if (!state.progress[key]) {
+        state.progress[key] = {
+            cnToEn: false,
+            enToCn: false,
+            listenToCn: false,
+            matchLink: false
+        };
+    }
     state.progress[key][state.activeMode] = true;
-    saveAllGroupData();
+    saveAllData();
     renderLevelGrid();
+
     const total = state.levelWordList.length;
-    const rate = total===0 ? 0 : Math.round(state.rightCount / total * 100);
+    const rate = total === 0 ? 0 : Math.round(state.rightCount / total * 100);
     const rec = state.progress[key];
     const doneNum = [rec.cnToEn, rec.enToCn, rec.listenToCn, rec.matchLink].filter(Boolean).length;
+
     alert(`本题型完成！
 答对：${state.rightCount} / ${total}
 正确率：${rate}%
 最高连击：${state.combo}
 当前关卡已完成${doneNum}/4个题型，全部通关才可解锁下一关`);
+
     el.answerPanel.classList.remove("show");
     el.homePanel.classList.add("show");
 }
-function openMatchGame(){
-    if(state.levelWordList.length === 0){
+
+// 打开配对游戏
+function openMatchGame() {
+    if (state.levelWordList.length === 0) {
         alert("请先进入关卡加载单词");
         return;
     }
+
     el.matchMask.classList.add("show");
     state.matchAllWords = [...state.levelWordList];
     state.matchCurPage = 1;
     state.matchAllFinish = 0;
     state.matchTotalPage = Math.ceil(state.matchAllWords.length / state.matchPageSize);
+    
     el.matchAllTotal.innerText = state.matchAllWords.length;
     loadMatchPage();
 }
-function loadMatchPage(){
+
+// 加载配对页面
+function loadMatchPage() {
     state.matchCurPageFinish = 0;
     state.matchSelectCard = null;
     el.enListBox.innerHTML = "";
     el.cnListBox.innerHTML = "";
+
     const startIdx = (state.matchCurPage - 1) * state.matchPageSize;
     const endIdx = startIdx + state.matchPageSize;
     const pageWords = state.matchAllWords.slice(startIdx, endIdx);
+    
     el.matchPageTip.innerText = `第${state.matchCurPage}页 / 共${state.matchTotalPage}页`;
+    el.matchCurPageTotal.innerText = pageWords.length;
     el.matchCurPage.innerText = state.matchCurPageFinish;
     el.matchTotalDone.innerText = state.matchAllFinish;
-    const enData = [];
-    const cnData = [];
-    pageWords.forEach(w=>{
-        enData.push({type:"en", content:w.en, data:w});
-        cnData.push({type:"cn", content:w.cn, data:w});
-    });
-    enData.forEach(info=>{
+
+    const enData = pageWords.map(w => ({ type: "en", content: w.en, data: w }));
+    const cnData = pageWords.map(w => ({ type: "cn", content: w.cn, data: w }));
+
+    enData.forEach(info => {
         const div = document.createElement("div");
         div.className = "match-card";
         div.innerText = info.content;
         div.dataset.en = info.data.en;
         div.dataset.type = info.type;
-        div.onclick = ()=>{
-            initAudioOnce();
+        div.onclick = () => {
             speakWord(info.data.en);
             matchCardClick(div, info);
         };
         el.enListBox.appendChild(div);
     });
-    cnData.sort(()=>Math.random()-0.5);
-    cnData.forEach(info=>{
+
+    shuffleArray(cnData).forEach(info => {
         const div = document.createElement("div");
         div.className = "match-card";
         div.innerText = info.content;
         div.dataset.en = info.data.en;
         div.dataset.type = info.type;
-        div.onclick = ()=>{
-            initAudioOnce();
+        div.onclick = () => {
             matchCardClick(div, info);
         };
         el.cnListBox.appendChild(div);
-    })
+    });
+
+    el.prevMatchPageBtn.disabled = state.matchCurPage <= 1;
+    el.nextMatchPageBtn.disabled = state.matchCurPage >= state.matchTotalPage;
 }
-function matchCardClick(dom, info){
-    if(dom.classList.contains("match")) return;
-    if(!state.matchSelectCard){
+
+// 配对卡片点击处理
+// 配对卡片点击处理【优化修复版】
+function matchCardClick(dom, info) {
+    // 已配对完成的卡片禁止操作
+    if (dom.classList.contains("match")) return;
+
+    // 场景1：当前没有任何选中卡片，直接选中当前点击项
+    if (!state.matchSelectCard) {
         state.matchSelectCard = dom;
         dom.classList.add("select");
-    }else{
-        const prevDom = state.matchSelectCard;
-        const prevEn = prevDom.dataset.en;
-        const curEn = dom.dataset.en;
-        if(prevEn === curEn && prevDom.dataset.type !== dom.dataset.type){
-            prevDom.classList.remove("select");
-            dom.classList.remove("select");
-            prevDom.classList.add("match");
-            dom.classList.add("match");
-            state.matchCurPageFinish++;
-            state.matchAllFinish++;
-            el.matchCurPage.innerText = state.matchCurPageFinish;
-            el.matchTotalDone.innerText = state.matchAllFinish;
-            playTone("right");
-            if(state.matchCurPageFinish >= state.matchPageSize){
-                setTimeout(()=>{
-                    if(state.matchCurPage < state.matchTotalPage){
-                        alert(`本页8组配对完成，进入下一页`);
-                        state.matchCurPage++;
-                        loadMatchPage();
-                    }else{
-                        const key = `${state.activeGroup}_star${state.activeStar}_lv${state.currentLevel}`;
-                        if(!state.progress[key]) state.progress[key] = {cnToEn:false, enToCn:false, listenToCn:false, matchLink:false};
-                        state.progress[key].matchLink = true;
-                        saveAllGroupData();
-                        renderLevelGrid();
-                        alert(`本关卡全部${state.matchAllWords.length}组单词配对全部完成！
-配对题型已标记通关
-当前关卡4类题型全部通关才可解锁下一关`);
-                        el.matchMask.classList.remove("show");
-                        el.homePanel.classList.add("show");
+        // 点击英文单词只朗读，不报错
+        if(info.type === "en") speakWord(info.data.en);
+        return;
+    }
+
+    // 场景2：已有选中卡片
+    const prevDom = state.matchSelectCard;
+    const prevEn = prevDom.dataset.en;
+    const curEn = dom.dataset.en;
+    const prevType = prevDom.dataset.type;
+    const curType = dom.dataset.type;
+
+    // 情况A：两次点击同一张卡片 → 取消选中
+    if (prevDom === dom) {
+        prevDom.classList.remove("select");
+        state.matchSelectCard = null;
+        return;
+    }
+
+    // 情况B：选中的是同类型（两次英文 / 两次中文），取消上一次选中，新选当前
+    if (prevType === curType) {
+        prevDom.classList.remove("select");
+        state.matchSelectCard = dom;
+        dom.classList.add("select");
+        if(info.type === "en") speakWord(info.data.en);
+        return;
+    }
+
+    // 情况C：不同类型，英文+中文，判断单词是否匹配
+    if (prevEn === curEn) {
+        // 匹配成功
+        prevDom.classList.remove("select");
+        dom.classList.remove("select");
+        prevDom.classList.add("match");
+        dom.classList.add("match");
+        
+        state.matchCurPageFinish++;
+        state.matchAllFinish++;
+        el.matchCurPage.innerText = state.matchCurPageFinish;
+        el.matchTotalDone.innerText = state.matchAllFinish;
+        playTone("right");
+
+        const currentPageTotal = Number(el.matchCurPageTotal.innerText);
+        if (state.matchCurPageFinish >= currentPageTotal) {
+            if (state.matchCurPage >= state.matchTotalPage) {
+                setTimeout(() => {
+                    const key = `${state.activeGroup}_star${state.activeStar}_lv${state.currentLevel}`;
+                    if (!state.progress[key]) {
+                        state.progress[key] = {
+                            cnToEn: false,
+                            enToCn: false,
+                            listenToCn: false,
+                            matchLink: false
+                        };
                     }
-                },500);
+                    state.progress[key].matchLink = true;
+                    saveAllData();
+                    renderLevelGrid();
+                    
+                    alert(`本关卡全部${state.matchAllWords.length}组单词配对完成！
+已完成配对题型，可继续挑战其他题型`);
+                    
+                    el.matchMask.classList.remove("show");
+                    el.answerPanel.classList.remove("show");
+                    el.homePanel.classList.add("show");
+                }, 800);
+            } else {
+                setTimeout(() => {
+                    alert(`本页${currentPageTotal}组配对完成，进入下一页`);
+                    state.matchCurPage++;
+                    loadMatchPage();
+                }, 800);
             }
-        }else{
-            prevDom.classList.remove("select");
         }
+        // 清空选中缓存
+        state.matchSelectCard = null;
+    } else {
+        // 单词不匹配，播放错误音效，取消全部选中
+        playTone("wrong");
+        prevDom.classList.remove("select");
+        dom.classList.remove("select");
         state.matchSelectCard = null;
     }
 }
-function bindAllEvent(){
-    el.listenSpeakerBtn.onclick = function(){
-        initAudioOnce();
-        if(state.currentAudioWord) speakWord(state.currentAudioWord);
-    };
-    el.modeTabs.forEach(tab=>{
-        tab.onclick = function(){
-            el.modeTabs.forEach(t=>t.classList.remove("active"));
-            this.classList.add("active");
-            state.activeMode = this.dataset.mode;
-            if(state.activeMode === "matchLink"){
-                if(state.levelWordList.length === 0) startLevel(1);
-                openMatchGame();
-            }else{
-                renderLevelGrid();
-            }
-        };
-    });
-    el.starTabs.forEach(tab=>{
-        tab.onclick = function(){
-            el.starTabs.forEach(t=>t.classList.remove("active"));
-            this.classList.add("active");
-            state.activeStar = Number(this.dataset.star);
+// 绑定事件监听
+function bindEvents() {
+    el.modeTabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            el.modeTabs.forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            state.activeMode = tab.dataset.mode;
             renderLevelGrid();
-        };
+        });
     });
-    el.backHomeBtn.onclick = function(){
+
+    el.starTabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            el.starTabs.forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            state.activeStar = Number(tab.dataset.star);
+            renderLevelGrid();
+        });
+    });
+
+    el.backHomeBtn.addEventListener("click", () => {
         clearTimeout(globalTimer);
         el.answerPanel.classList.remove("show");
         el.homePanel.classList.add("show");
-        renderLevelGrid();
-    };
-    el.openGroupManageBtn.onclick = function(){
-        el.pwdMask.classList.add("show");
+    });
+
+    el.listenSpeakerBtn.addEventListener("click", () => {
+        speakWord(state.currentAudioWord);
+    });
+
+    el.openGroupManageBtn.addEventListener("click", () => {
         el.pwdInput.value = "";
-    };
-    el.closePwdMask.onclick = ()=> el.pwdMask.classList.remove("show");
-    el.pwdCancelBtn.onclick = ()=> el.pwdMask.classList.remove("show");
-    el.pwdConfirmBtn.onclick = openGroupMaskAfterPwd;
-    el.closeGroupMask.onclick = ()=> el.groupMask.classList.remove("show");
-    el.createGroupBtn.onclick = function(){
-        const name = el.newGroupName.value.trim();
-        if(!name){alert("请输入分组名称");return;}
-        if(state.groupList.includes(name)){alert("分组已存在");return;}
-        state.groupList.push(name);
-        state.groupWordData[name] = [...WORD_LIB];
-        state.activeGroup = name;
-        renderGroupSelect();
-        saveAllGroupData();
-        el.newGroupName.value = "";
-        alert("分组创建成功");
-    };
-    el.delGroupBtn.onclick = function(){
-        if(state.groupList.length <=1){alert("至少保留一个分组");return;}
-        if(!confirm(`确认删除【${state.activeGroup}】？词库数据将清空`)) return;
-        state.groupList = state.groupList.filter(g=>g !== state.activeGroup);
-        delete state.groupWordData[state.activeGroup];
-        state.activeGroup = state.groupList[0];
-        renderGroupSelect();
-        saveAllGroupData();
-        alert("删除完成");
-    };
-    el.importWordBtn.onclick = function(){
-        const text = el.importTextarea.value;
-        const arr = parseImportText(text);
-        if(arr.length ===0){alert("未识别有效单词，请按格式：英文 中文 一行一个");return;}
-        state.groupWordData[state.activeGroup] = state.groupWordData[state.activeGroup].concat(arr);
-        saveAllGroupData();
-        el.importTextarea.value = "";
-        alert(`成功导入${arr.length}组单词`);
-    };
-    el.replaceImportBtn.onclick = function(){
-        const text = el.importTextarea.value;
-        const arr = parseImportText(text);
-        if(arr.length ===0){alert("未识别有效单词，请按格式：英文 中文 一行一个");return;}
-        state.groupWordData[state.activeGroup] = arr;
-        saveAllGroupData();
-        el.importTextarea.value = "";
-        alert(`已覆盖，共${arr.length}组单词`);
-    };
-    el.exportWordBtn.onclick = async function(){
-        const list = state.groupWordData[state.activeGroup];
-        const text = exportWordText(list);
-        await navigator.clipboard.writeText(text);
-        alert("单词文本已复制到剪贴板（英文 中文，空格分隔）");
-    };
-    el.groupSelect.onchange = function(){
-        state.activeGroup = this.value;
-        saveAllGroupData();
+        el.pwdMask.classList.add("show");
+    });
+    el.closePwdMask.addEventListener("click", () => {
+        el.pwdMask.classList.remove("show");
+    });
+    el.pwdCancelBtn.addEventListener("click", () => {
+        el.pwdMask.classList.remove("show");
+    });
+    el.pwdConfirmBtn.addEventListener("click", openGroupMaskAfterPwd);
+
+    el.openSettingBtn.addEventListener("click", () => {
+        el.voiceSet.value = CONFIG.AUDIO.voiceAccent;
+        el.soundSwitch.checked = CONFIG.AUDIO.soundEnable;
+        el.settingMask.classList.add("show");
+        updateWordCountTip();
+    });
+    el.closeSettingMask.addEventListener("click", () => {
+        el.settingMask.classList.remove("show");
+    });
+    el.saveSettingBtn.addEventListener("click", () => {
+        CONFIG.AUDIO.voiceAccent = el.voiceSet.value;
+        CONFIG.AUDIO.soundEnable = el.soundSwitch.checked;
+        const perLevel = Number(el.perLevelSet.value);
+        if (perLevel < 5 || perLevel > 50) {
+            alert("单关单词数量需在5-50之间");
+            return;
+        }
+        state.perLevelWordCount = perLevel;
+        saveAllData();
+        el.settingMask.classList.remove("show");
         renderLevelGrid();
-    };
-    el.wrongReviewBtn.onclick = function(){
-        if(state.wrongWords.length ===0){alert("暂无错题");return;}
+        alert("设置已保存");
+    });
+    el.resetProgressBtn.addEventListener("click", () => {
+        if (confirm("确定要清空所有闯关记录吗？此操作不可恢复！")) {
+            state.progress = {};
+            saveAllData();
+            renderLevelGrid();
+            alert("闯关记录已清空");
+        }
+    });
+    el.clearAllDataBtn.addEventListener("click", () => {
+        if (confirm("确定要清空所有本地数据（包括词库、进度、错题）吗？此操作不可恢复！")) {
+            Storage.clearAll();
+            initStorageData();
+            renderGroupSelect();
+            renderLevelGrid();
+            alert("所有本地数据已清空");
+        }
+    });
+
+    el.closeGroupMask.addEventListener("click", () => {
+        el.groupMask.classList.remove("show");
+    });
+    el.createGroupBtn.addEventListener("click", () => {
+        const name = el.newGroupName.value.trim();
+        if (!name) {
+            alert("请输入分组名称");
+            return;
+        }
+        if (state.groupList.includes(name)) {
+            alert("分组名称已存在");
+            return;
+        }
+        state.groupList.push(name);
+        state.groupWordData[name] = [];
+        el.newGroupName.value = "";
+        saveAllData();
+        renderGroupSelect();
+        alert(`分组「${name}」创建成功`);
+    });
+    el.delGroupBtn.addEventListener("click", () => {
+        if (state.groupList.length <= 1) {
+            alert("至少保留一个分组");
+            return;
+        }
+        if (confirm(`确定要删除分组「${state.activeGroup}」吗？该分组下的所有单词也会被删除！`)) {
+            const idx = state.groupList.indexOf(state.activeGroup);
+            state.groupList.splice(idx, 1);
+            delete state.groupWordData[state.activeGroup];
+            state.activeGroup = state.groupList[0];
+            saveAllData();
+            renderGroupSelect();
+            el.groupMask.classList.remove("show");
+            alert("分组已删除");
+        }
+    });
+    el.importWordBtn.addEventListener("click", () => {
+        const text = el.importTextarea.value.trim();
+        if (!text) {
+            alert("请输入要导入的单词内容");
+            return;
+        }
+        const newWords = parseImportText(text);
+        if (newWords.length === 0) {
+            alert("未解析到有效单词，请检查格式");
+            return;
+        }
+        const currentWords = state.groupWordData[state.activeGroup] || [];
+        const enSet = new Set(currentWords.map(w => w.en));
+        const filterWords = newWords.filter(w => !enSet.has(w.en));
+        state.groupWordData[state.activeGroup] = [...currentWords, ...filterWords];
+        saveAllData();
+        el.importTextarea.value = "";
+        updateWordCountTip();
+        alert(`成功导入${filterWords.length}个新单词（${newWords.length - filterWords.length}个重复）`);
+    });
+    el.replaceImportBtn.addEventListener("click", () => {
+        const text = el.importTextarea.value.trim();
+        if (!text) {
+            alert("请输入要导入的单词内容");
+            return;
+        }
+        const newWords = parseImportText(text);
+        if (newWords.length === 0) {
+            alert("未解析到有效单词，请检查格式");
+            return;
+        }
+        if (confirm("确定要覆盖当前分组的所有单词吗？此操作不可恢复！")) {
+            state.groupWordData[state.activeGroup] = newWords;
+            saveAllData();
+            el.importTextarea.value = "";
+            updateWordCountTip();
+            alert(`成功覆盖导入${newWords.length}个单词`);
+        }
+    });
+    el.exportWordBtn.addEventListener("click", () => {
+        const words = state.groupWordData[state.activeGroup] || [];
+        if (words.length === 0) {
+            alert("当前分组无单词可导出");
+            return;
+        }
+        const text = exportWordText(words);
+        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${state.activeGroup}_单词库.txt`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    });
+    el.groupSelect.addEventListener("change", () => {
+        state.activeGroup = el.groupSelect.value;
+        saveAllData();
+        renderLevelGrid();
+        updateWordCountTip();
+    });
+
+    el.wrongReviewBtn.addEventListener("click", () => {
+        if (state.wrongWords.length === 0) {
+            alert("暂无错题可复习");
+            return;
+        }
         state.useWrongLib = true;
-        state.levelWordList = [...state.wrongWords].sort(()=>Math.random()-0.5);
+        state.levelWordList = shuffleArray([...state.wrongWords]);
         state.qIndex = 0;
         state.rightCount = 0;
         state.wrongCount = 0;
         state.combo = 0;
+        answeringLock = false;
+
         el.homePanel.classList.remove("show");
         el.answerPanel.classList.add("show");
-        el.levelTag.innerText = "错题复习模式";
+        el.levelTag.innerText = "错题复习";
+        const modeInfo = getCurrentModeInfo();
+        el.questionTip.innerText = `错题复习 - ${modeInfo.tip}`;
+        el.listenSpeakerBtn.classList.toggle("show", modeInfo.hideQuesText === true);
         renderQuestion();
-    };
-    el.openSettingBtn.onclick = ()=> el.settingMask.classList.add("show");
-    el.closeSettingMask.onclick = ()=> el.settingMask.classList.remove("show");
-    el.saveSettingBtn.onclick = function(){
-        AUDIO_CFG.voiceAccent = el.voiceSet.value;
-        AUDIO_CFG.soundSwitch = el.soundSwitch.checked;
-        saveAllGroupData();
-        el.settingMask.classList.remove("show");
-        alert("设置已保存");
-    };
-    el.resetProgressBtn.onclick = function(){
-        if(!confirm("确认清空全部关卡通关记录？")) return;
-        state.progress = {};
-        saveAllGroupData();
-        renderLevelGrid();
-        alert("闯关记录已全部重置");
-    };
-    el.clearAllDataBtn.onclick = function(){
-        if(!confirm("确认清空所有分组、单词、闯关、错题数据，无法恢复？")) return;
-        Storage.clearAll();
-        location.reload();
-    };
-    el.closeMatchBtn.onclick = ()=> el.matchMask.classList.remove("show");
+    });
+
+    el.closeMatchBtn.addEventListener("click", () => {
+        el.matchMask.classList.remove("show");
+    });
+    el.prevMatchPageBtn.addEventListener("click", () => {
+        if (state.matchCurPage > 1) {
+            state.matchCurPage--;
+            loadMatchPage();
+        }
+    });
+    el.nextMatchPageBtn.addEventListener("click", () => {
+        if (state.matchCurPage < state.matchTotalPage) {
+            state.matchCurPage++;
+            loadMatchPage();
+        }
+    });
 }
-// 完整收尾，无缺失
-window.onload = function(){
+
+// 页面初始化入口
+function init() {
+    initStorageData();
+    initVoiceSynthesis();
     renderGroupSelect();
     renderLevelGrid();
-    bindAllEvent();
+    bindEvents();
 }
+init();
 </script>
-</html>
